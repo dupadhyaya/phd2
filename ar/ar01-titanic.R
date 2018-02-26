@@ -1,50 +1,55 @@
 # Association Rule Example 1 ####
 #http://www.rdatamining.com/examples/association-rules
-str(titanic.raw)
+load("./data/titanic.raw.rdata")
+titanic1 = titanic.raw
+str(titanic1)
 
 #write.csv(titanic.raw,file="titanic.csv")
-titanic = read.csv("./data/titanic.csv")
-head(titanic)
-titanic = titanic[-1]
-head(titanic)
+titanic2 = read.csv("./data/titanic.csv")
+str(titanic2)
 
-#load('titanic.raw.rdata')
+titanic = titanic1
+head(titanic)
+#titanic = titanic[-1]  # not reqd from rdata
+head(titanic)
+str(titanic)
+
 library(arules)
-#str(titanic.raw)
-# Find Association Rules with Default Settings
-rules = apriori(titanic.raw)
+
+rules = apriori(titanic, control=list(verbose=F))
 rules = apriori(titanic)
+
+options(digits=3)
 inspect(rules)
+rules
+inspect(rules[1:5])
 quality(rules) = round(quality(rules), digits=3)
-quality(rules)
-# Set rhs=c("Survived=No", "Survived=Yes") in appearance to make sure that #only "Survived=No" and "Survived=Yes" will appear in the rhs of rules.
+quality(rules[1:5])
 
 rules = apriori(titanic, parameter = list(minlen=2,supp=.005,conf=0.8),  list(rhs=c("Survived=No","Survived=Yes"),default="lhs"), control=list(verbose=F))
-rules.sorted = sort(rules, by="lift")
-inspect(rules.sorted)
-options(digits=2)
-# Pruning Redundant Rules
-#In the above result, rule 2 provides no extra knowledge in addition to rule 1, since rules 1 tells us that all 2nd-class children survived. Generally speaking, when a rule (such as rule 2) is a super rule of another rule (such as rule 1) and the former has the same or a lower lift, the former rule (rule 2)
-#is considered to be redundant. Below we prune redundant rules. 
-# find redundant rules
-subset.matrix <- is.subset(rules.sorted, rules.sorted)
-subset.matrix
-subset.matrix[lower.tri(subset.matrix, diag=T)] <- NA
-subset.matrix
 
-redundant <- colSums(subset.matrix, na.rm=T) >= 1
-subset.matrix
-redundant
-which(redundant)
-# remove redundant rules
-rules.pruned <- rules.sorted[!redundant]
+rules.sorted = sort(rules, by="lift")
+
+inspect(rules.sorted[1:5])
+
+options(digits=2)
+
+
+# Prune Redundant
+rules.pruned <- rules[!is.redundant(rules)]
+rules.redundant <- rules[is.redundant(rules)]
+?is.redundant
 inspect(rules.pruned)
+rules.pruned
+inspect(rules.redundant)
+rules.pruned.sorted = sort(rules.pruned, by="lift")
+inspect(rules.pruned.sorted)
 
 # Visualising
 library(arulesViz)
-plot(rules)
+plot(rules.pruned.sorted)
 
-plot(rules, method="graph", control=list(type="items"))
+plot(rules.pruned.sorted, method="graph", control=list(type="items"))
 
-plot(rules, method="paracoord", control=list(reorder=TRUE))
+plot(rules.pruned.sorted, method="paracoord", control=list(reorder=TRUE))
 
